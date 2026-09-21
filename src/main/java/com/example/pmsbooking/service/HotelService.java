@@ -19,4 +19,11 @@ public class HotelService {
                 )
         );
     }
+
+    public Hotel getHotelById(Long id) {
+        return getHotels().stream()
+                .filter(hotel -> hotel.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
 }
