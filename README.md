@@ -34,21 +34,13 @@ REST API платформа для автоматизации гостиничн
 - [x] GET /api/hotels/{id}
 - [x] POST /api/hotels
 
-## Architecture
+### PostgreSQL + Flyway
 
-Controller → Service → Repository → Database
-
-## Planned Modules
-
-- PostgreSQL + migrations
-- JPA / Hibernate
-- DTO + Validation
-- Exception Handling
-- Spring Security + JWT
-- Booking
-- Task Management
-- RabbitMQ
-- Testing
-- Docker
-- GitHub Actions
-- Swagger / OpenAPI
+- [x] PostgreSQL configured
+- [x] PostgreSQL database `pms_booking` connected
+- [x] Flyway configured
+- [x] Initial database migration created
+- [x] `V1__create_users.sql`
+- [x] `users` table created by Flyway
+- [x] `flyway_schema_history` created and managed by Flyway
+- [x] Database password configured through `DB_PASSWORD` environment variable
