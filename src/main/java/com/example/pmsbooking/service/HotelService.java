@@ -1,6 +1,7 @@
 package com.example.pmsbooking.service;
 
 import com.example.pmsbooking.entity.Hotel;
+import com.example.pmsbooking.repository.HotelRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -8,22 +9,22 @@ import java.util.List;
 @Service
 public class HotelService {
 
+    private final HotelRepository hotelRepository;
+
+    public HotelService(HotelRepository hotelRepository) {
+        this.hotelRepository = hotelRepository;
+    }
+
     public List<Hotel> getHotels() {
-        return List.of(
-                new Hotel(
-                        1L,
-                        "Северная Звезда",
-                        "Amsterdam, Netherlands",
-                        "Современный городской отель в центре Амстердама. К услугам гостей комфортные " +
-                                "номера, бесплатный Wi-Fi и круглосуточная стойка регистрации."
-                )
-        );
+        return hotelRepository.findAll();
     }
 
     public Hotel getHotelById(Long id) {
-        return getHotels().stream()
-                .filter(hotel -> hotel.getId().equals(id))
-                .findFirst()
+        return hotelRepository.findById(id)
                 .orElse(null);
+    }
+
+    public Hotel createHotel(Hotel hotel) {
+        return hotelRepository.save(hotel);
     }
 }
