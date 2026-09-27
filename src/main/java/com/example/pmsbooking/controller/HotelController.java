@@ -33,6 +33,6 @@ public class HotelController {
 
     @PostMapping
     public Hotel createHotel(@RequestBody Hotel hotel) {
-        return hotel;
+        return hotelService.createHotel(hotel);
     }
 }
