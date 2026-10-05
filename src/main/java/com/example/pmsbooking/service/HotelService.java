@@ -1,5 +1,7 @@
 package com.example.pmsbooking.service;
 
+import com.example.pmsbooking.dto.hotel.HotelRequest;
+import com.example.pmsbooking.dto.hotel.HotelResponse;
 import com.example.pmsbooking.entity.Hotel;
 import com.example.pmsbooking.repository.HotelRepository;
 import org.springframework.stereotype.Service;
@@ -15,16 +17,42 @@ public class HotelService {
         this.hotelRepository = hotelRepository;
     }
 
-    public List<Hotel> getHotels() {
-        return hotelRepository.findAll();
+    public List<HotelResponse> getHotels() {
+        return hotelRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    public Hotel getHotelById(Long id) {
-        return hotelRepository.findById(id)
+    public HotelResponse getHotelById(Long id) {
+        Hotel hotel = hotelRepository.findById(id)
                 .orElse(null);
+
+        if (hotel == null) {
+            return null;
+        }
+
+        return toResponse(hotel);
     }
 
-    public Hotel createHotel(Hotel hotel) {
-        return hotelRepository.save(hotel);
+    public HotelResponse createHotel(HotelRequest request) {
+        Hotel hotel = new Hotel(
+                request.getName(),
+                request.getAddress(),
+                request.getDescription()
+        );
+
+        Hotel savedHotel = hotelRepository.save(hotel);
+
+        return toResponse(savedHotel);
+    }
+
+    private HotelResponse toResponse(Hotel hotel) {
+        return new HotelResponse(
+                hotel.getId(),
+                hotel.getName(),
+                hotel.getAddress(),
+                hotel.getDescription()
+        );
     }
 }

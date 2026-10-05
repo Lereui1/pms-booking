@@ -1,13 +1,10 @@
 package com.example.pmsbooking.controller;
 
-import com.example.pmsbooking.entity.Hotel;
+import com.example.pmsbooking.dto.hotel.HotelRequest;
+import com.example.pmsbooking.dto.hotel.HotelResponse;
 import com.example.pmsbooking.service.HotelService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,17 +19,17 @@ public class HotelController {
     }
 
     @GetMapping
-    public List<Hotel> getHotels() {
+    public List<HotelResponse> getHotels() {
         return hotelService.getHotels();
     }
 
     @GetMapping("/{id}")
-    public Hotel getHotelById(@PathVariable Long id) {
+    public HotelResponse getHotelById(@PathVariable Long id) {
         return hotelService.getHotelById(id);
     }
 
     @PostMapping
-    public Hotel createHotel(@RequestBody Hotel hotel) {
-        return hotelService.createHotel(hotel);
+    public HotelResponse createHotel(@Valid @RequestBody HotelRequest request) {
+        return hotelService.createHotel(request);
     }
 }

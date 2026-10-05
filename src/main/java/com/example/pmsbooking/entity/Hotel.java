@@ -23,6 +23,12 @@ public class Hotel {
     protected Hotel() {
     }
 
+    public Hotel(String name, String address, String description) {
+        this.name = name;
+        this.address = address;
+        this.description = description;
+    }
+
     public Long getId() {
         return id;
     }
@@ -37,18 +43,5 @@ public class Hotel {
 
     public String getDescription() {
         return description;
-    }
-
-    // ВРЕМЕННОЕ РЕШЕНИЕ: HotelController пока принимает Entity напрямую
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }
