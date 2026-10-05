@@ -125,3 +125,40 @@ REST API платформа для автоматизации гостиничн
    ↓
  Protected endpoint
 ```
+
+### Hotel API + DTO
+
+- [x] Added `HotelRequest`
+- [x] Added `HotelResponse`
+- [x] Converted Hotel API from Entity responses to DTO responses
+- [x] Hotel creation uses `HotelRequest`
+- [x] Hotel responses use `HotelResponse`
+- [x] Added validation for hotel request fields
+- [x] `@NotBlank` validation
+- [x] `@Size(max = 255)` for name and address
+- [x] `@Size(max = 1000)` for description
+- [x] Tested Hotel API with JWT authentication
+- [x] Tested validation errors with Postman
+- [x] Tested unauthorized access without JWT
+
+### Hotel API DTO flow
+
+```text
+JSON
+ ↓
+HotelRequest
+ ↓
+HotelController
+ ↓
+HotelService
+ ↓
+Hotel Entity
+ ↓
+PostgreSQL
+ ↓
+Hotel Entity
+ ↓
+HotelResponse
+ ↓
+JSON
+```
