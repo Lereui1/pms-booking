@@ -162,3 +162,81 @@ HotelResponse
  ↓
 JSON
 ```
+
+### Booking API
+
+* [x] Added `BookingController`
+* [x] Added `BookingService`
+* [x] Implemented booking creation: `POST /api/bookings`
+* [x] Added `BookingRequest` and `BookingResponse`
+* [x] Retrieved the authenticated user from `SecurityContext`
+* [x] Added room existence check
+* [x] Added check-in and check-out date validation
+* [x] Implemented booking date overlap detection
+* [x] Excluded `CANCELLED` bookings from availability checks
+* [x] Added booking conflict handling
+* [x] Returned booking data through `BookingResponse`
+
+### Booking creation flow
+
+```text
+POST /api/bookings
+   ↓
+BookingRequest
+   ↓
+BookingController
+   ↓
+BookingService
+   ↓
+@Transactional
+   ↓
+Get authenticated User
+   ↓
+Lock Room
+   ↓
+Validate dates
+   ↓
+Check existing bookings
+   ↓
+Create Booking
+   ↓
+BookingRepository
+   ↓
+PostgreSQL
+   ↓
+BookingResponse
+   ↓
+JSON
+```
+
+### Transactions + Locking
+
+* [x] Learned transaction boundaries
+* [x] Implemented transaction management with `@Transactional`
+* [x] Studied race conditions
+* [x] Implemented pessimistic locking with `PESSIMISTIC_WRITE`
+* [x] Configured optimistic locking with `@Version`
+* [x] Used pessimistic locking to synchronize concurrent booking requests
+* [x] Added a concurrent booking integration test
+* [x] Tested concurrent requests using multiple threads and `CountDownLatch`
+* [x] Verified that only one concurrent booking succeeds for the same room and overlapping dates
+* [x] Configured a separate test database: `pms_booking_test`
+* [x] Verified the test suite with Maven: `BUILD SUCCESS`
+
+### Concurrent booking test flow
+
+```text
+Request A                 Request B
+    ↓                         ↓
+    └────── Start together ───┘
+                  ↓
+          Lock the same Room
+                  ↓
+       One request waits for lock
+                  ↓
+          Check booking dates
+                  ↓
+       A: SUCCESS / B: CONFLICT
+                  ↓
+       No double booking
+```
