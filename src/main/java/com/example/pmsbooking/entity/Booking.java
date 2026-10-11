@@ -42,6 +42,22 @@ public class Booking {
     protected Booking() {
     }
 
+    public Booking(
+            User user,
+            Room room,
+            LocalDate checkIn,
+            LocalDate checkOut,
+            BookingStatus status,
+            LocalDateTime createdAt
+    ) {
+        this.user = user;
+        this.room = room;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }

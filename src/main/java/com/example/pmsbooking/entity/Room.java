@@ -36,6 +36,14 @@ public class Room {
     protected Room() {
     }
 
+    public Room(String roomNumber, String type,
+                BigDecimal pricePerNight, Hotel hotel) {
+        this.roomNumber = roomNumber;
+        this.type = type;
+        this.pricePerNight = pricePerNight;
+        this.hotel = hotel;
+    }
+
     public Long getId() {
         return id;
     }
