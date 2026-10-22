@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +27,16 @@ public class Task {
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private Room room;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_staff_id")
+    private User assignedStaff;
 
     private String title;
 
@@ -36,9 +45,31 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
+    private LocalDate dueDate;
+
     private LocalDateTime createdAt;
 
     protected Task() {
+    }
+
+    public Task(
+            Hotel hotel,
+            Room room,
+            Booking booking,
+            User assignedStaff,
+            String title,
+            String description,
+            LocalDate dueDate
+    ) {
+        this.hotel = hotel;
+        this.room = room;
+        this.booking = booking;
+        this.assignedStaff = assignedStaff;
+        this.title = title;
+        this.description = description;
+        this.dueDate = dueDate;
+        this.status = TaskStatus.BACKLOG;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -49,8 +80,16 @@ public class Task {
         return hotel;
     }
 
+    public Room getRoom() {
+        return room;
+    }
+
     public Booking getBooking() {
         return booking;
+    }
+
+    public User getAssignedStaff() {
+        return assignedStaff;
     }
 
     public String getTitle() {
@@ -65,7 +104,33 @@ public class Task {
         return status;
     }
 
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void updateDetails(
+            Hotel hotel,
+            Room room,
+            Booking booking,
+            User assignedStaff,
+            String title,
+            String description,
+            LocalDate dueDate
+    ) {
+        this.hotel = hotel;
+        this.room = room;
+        this.booking = booking;
+        this.assignedStaff = assignedStaff;
+        this.title = title;
+        this.description = description;
+        this.dueDate = dueDate;
+    }
+
+    public void changeStatus(TaskStatus status) {
+        this.status = status;
     }
 }

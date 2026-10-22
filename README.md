@@ -240,3 +240,48 @@ Request A                 Request B
                   ↓
        No double booking
 ```
+
+## Task Management
+
+The Task Management module provides REST API endpoints for creating and managing hotel staff tasks.
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/tasks` | Get all tasks |
+| GET | `/api/tasks/{id}` | Get a task by ID |
+| POST | `/api/tasks` | Create a task |
+| PUT | `/api/tasks/{id}` | Update task details |
+| PATCH | `/api/tasks/{id}/status?status=IN_PROGRESS` | Update task status |
+| DELETE | `/api/tasks/{id}` | Delete a task |
+
+### Task fields
+
+- `hotelId` — required hotel ID.
+- `roomId` — optional room ID.
+- `bookingId` — optional booking ID.
+- `assignedStaffId` — optional ID of a staff user.
+- `title` — required, up to 255 characters.
+- `description` — required, up to 2000 characters.
+- `dueDate` — optional due date.
+- `status` — task status.
+- `createdAt` — task creation timestamp.
+
+### Task status workflow
+
+Tasks follow the allowed status transitions:
+
+`BACKLOG → IN_PROGRESS → DONE`
+
+Invalid status transitions are rejected with HTTP 400.
+
+### Validation and error handling
+
+The service validates that referenced hotels, rooms, bookings, and staff users exist and that related entities belong to the selected hotel. Users assigned to tasks must have the `STAFF` role.
+
+The API uses structured error responses for validation errors, missing resources, and invalid business operations.
+
+### Database migration
+
+Flyway migration `V6__extend_tasks.sql` adds the room, assigned staff, and due date fields to the tasks table.
