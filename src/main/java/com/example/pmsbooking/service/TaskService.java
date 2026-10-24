@@ -2,20 +2,14 @@ package com.example.pmsbooking.service;
 
 import com.example.pmsbooking.dto.task.TaskRequest;
 import com.example.pmsbooking.dto.task.TaskResponse;
-import com.example.pmsbooking.entity.Booking;
-import com.example.pmsbooking.entity.Hotel;
-import com.example.pmsbooking.entity.Room;
-import com.example.pmsbooking.entity.Task;
-import com.example.pmsbooking.entity.TaskStatus;
-import com.example.pmsbooking.entity.User;
+import com.example.pmsbooking.entity.*;
 import com.example.pmsbooking.exception.AccessDeniedException;
 import com.example.pmsbooking.exception.ResourceNotFoundException;
 import com.example.pmsbooking.exception.ValidationException;
-import com.example.pmsbooking.repository.BookingRepository;
-import com.example.pmsbooking.repository.HotelRepository;
-import com.example.pmsbooking.repository.RoomRepository;
-import com.example.pmsbooking.repository.TaskRepository;
-import com.example.pmsbooking.repository.UserRepository;
+import com.example.pmsbooking.repository.*;
+import com.example.pmsbooking.security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +40,10 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> getAllTasks() {
-        return taskRepository.findAllByOrderByCreatedAtDesc()
+        User currentUser = getCurrentUser();
+        Long hotelId = getCurrentHotelIdOrThrow(currentUser);
+
+        return taskRepository.findByHotelIdOrderByCreatedAtDesc(hotelId)
                 .stream()
                 .map(TaskResponse::from)
                 .toList();
@@ -54,16 +51,43 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long id) {
+        User currentUser = getCurrentUser();
+        Long hotelId = getCurrentHotelIdOrThrow(currentUser);
+
         Task task = getTaskOrThrow(id);
+
+        if (!task.getHotel().getId().equals(hotelId)) {
+            throw new AccessDeniedException(
+                    "You do not have access to this task"
+            );
+        }
+
         return TaskResponse.from(task);
     }
 
     @Transactional
     public TaskResponse createTask(TaskRequest request) {
+        User currentUser = getCurrentUser();
+        Long currentHotelId = getCurrentHotelIdOrThrow(currentUser);
+
+        if (!currentHotelId.equals(request.getHotelId())) {
+            throw new AccessDeniedException(
+                    "You cannot create tasks for another hotel"
+            );
+        }
+
         Hotel hotel = getHotelOrThrow(request.getHotelId());
         Room room = getRoomOrThrow(request.getRoomId());
         Booking booking = getBookingOrThrow(request.getBookingId());
         User assignedStaff = getStaffOrThrow(request.getAssignedStaffId());
+
+        if (assignedStaff != null
+                && (assignedStaff.getHotel() == null
+                || !assignedStaff.getHotel().getId().equals(currentHotelId))) {
+            throw new AccessDeniedException(
+                    "Assigned staff must belong to your hotel"
+            );
+        }
 
         validateRelationships(hotel, room, booking);
 
@@ -84,12 +108,35 @@ public class TaskService {
 
     @Transactional
     public TaskResponse updateTask(Long id, TaskRequest request) {
+        User currentUser = getCurrentUser();
+        Long currentHotelId = getCurrentHotelIdOrThrow(currentUser);
+
         Task task = getTaskOrThrow(id);
+
+        if (!task.getHotel().getId().equals(currentHotelId)) {
+            throw new AccessDeniedException(
+                    "You do not have access to this task"
+            );
+        }
+
+        if (!currentHotelId.equals(request.getHotelId())) {
+            throw new AccessDeniedException(
+                    "You cannot move tasks to another hotel"
+            );
+        }
 
         Hotel hotel = getHotelOrThrow(request.getHotelId());
         Room room = getRoomOrThrow(request.getRoomId());
         Booking booking = getBookingOrThrow(request.getBookingId());
         User assignedStaff = getStaffOrThrow(request.getAssignedStaffId());
+
+        if (assignedStaff != null
+                && (assignedStaff.getHotel() == null
+                || !assignedStaff.getHotel().getId().equals(currentHotelId))) {
+            throw new AccessDeniedException(
+                    "Assigned staff must belong to your hotel"
+            );
+        }
 
         validateRelationships(hotel, room, booking);
 
@@ -108,7 +155,16 @@ public class TaskService {
 
     @Transactional
     public TaskResponse updateTaskStatus(Long id, TaskStatus newStatus) {
+        User currentUser = getCurrentUser();
+        Long currentHotelId = getCurrentHotelIdOrThrow(currentUser);
+
         Task task = getTaskOrThrow(id);
+
+        if (!task.getHotel().getId().equals(currentHotelId)) {
+            throw new AccessDeniedException(
+                    "You do not have access to this task"
+            );
+        }
 
         boolean validTransition =
                 (task.getStatus() == TaskStatus.BACKLOG
@@ -130,7 +186,17 @@ public class TaskService {
 
     @Transactional
     public void deleteTask(Long id) {
+        User currentUser = getCurrentUser();
+        Long currentHotelId = getCurrentHotelIdOrThrow(currentUser);
+
         Task task = getTaskOrThrow(id);
+
+        if (!task.getHotel().getId().equals(currentHotelId)) {
+            throw new AccessDeniedException(
+                    "You do not have access to this task"
+            );
+        }
+
         taskRepository.delete(task);
     }
 
@@ -213,5 +279,27 @@ public class TaskService {
                     "Booking does not belong to the selected room"
             );
         }
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return userDetails.getUser();
+    }
+
+    private Long getCurrentHotelIdOrThrow(User user) {
+        if (user.getHotel() == null) {
+            throw new AccessDeniedException(
+                    "User is not assigned to a hotel"
+            );
+        }
+
+        return user.getHotel().getId();
     }
 }
