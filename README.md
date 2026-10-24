@@ -285,3 +285,35 @@ The API uses structured error responses for validation errors, missing resources
 ### Database migration
 
 Flyway migration `V6__extend_tasks.sql` adds the room, assigned staff, and due date fields to the tasks table.
+
+### Task Security + RBAC
+
+Role-Based Access Control (RBAC) restricts task management operations based on the authenticated user's role and hotel assignment.
+
+#### Authorization rules
+
+- [x] Restricted Task API endpoints to `STAFF` and `HOTEL_ADMIN` using `@PreAuthorize`
+- [x] Associated staff users with hotels through the `hotel_id` column in the `users` table
+- [x] Retrieved the authenticated user from `SecurityContext`
+- [x] Restricted task listing to the authenticated user's hotel
+- [x] Added hotel ownership checks before reading, updating or deleting tasks
+- [x] Prevented users from creating tasks for another hotel
+- [x] Prevented assigning staff members belonging to another hotel
+- [x] Added service-level authorization checks
+
+#### Database migration
+
+- [x] Added `V7__add_hotel_to_users.sql`
+- [x] Added nullable `hotel_id` column to `users`
+- [x] Added a foreign key from `users.hotel_id` to `hotels.id`
+
+#### Security testing
+
+- [x] Verified that `CLIENT` cannot access Task API endpoints
+- [x] Tested cross-hotel access restrictions with Postman
+- [x] Added automated tests for task authorization
+- [x] Tested reading, status updates and deletion of another hotel's task
+- [x] Tested access to tasks belonging to the user's own hotel
+- [x] Tested creating tasks for another hotel
+- [x] Tested assigning staff from another hotel
+- [x] Verified the full Maven test suite: 8 tests passed, 0 failures, 0 errors
