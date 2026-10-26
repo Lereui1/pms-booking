@@ -317,3 +317,58 @@ Role-Based Access Control (RBAC) restricts task management operations based on t
 - [x] Tested creating tasks for another hotel
 - [x] Tested assigning staff from another hotel
 - [x] Verified the full Maven test suite: 8 tests passed, 0 failures, 0 errors
+
+### Spring Scheduler
+
+The Spring Scheduler module automatically creates room-cleaning tasks for bookings scheduled to check out today.
+
+#### Scheduled task creation
+
+- [x] Enabled scheduling with `@EnableScheduling`
+- [x] Added `CheckoutScheduler` component
+- [x] Configured daily execution using `@Scheduled`
+- [x] Configured the scheduler to run every day at midnight
+- [x] Retrieved bookings with today's check-out date
+- [x] Processed only bookings with `CONFIRMED` status
+- [x] Integrated the scheduler with `TaskService`
+- [x] Automatically created room-cleaning tasks
+- [x] Set the hotel, room, and booking references for generated tasks
+- [x] Set the cleaning task title and room number in its description
+- [x] Set the task due date to the booking check-out date
+- [x] Initialized generated tasks with the `BACKLOG` status
+- [x] Prevented duplicate cleaning tasks for the same booking
+
+#### Example cleaning task
+
+| Field | Value |
+|---|---|
+| Title | `Уборка номера после выезда` |
+| Description | `Провести уборку номера №101` |
+| Status | `BACKLOG` |
+| Due date | Booking check-out date |
+| Assigned staff | Not assigned automatically |
+
+#### Automated testing
+
+- [x] Tested scheduler execution when bookings check out today
+- [x] Tested scheduler behavior when no bookings check out today
+- [x] Tested that tasks are not created for bookings that are not `CONFIRMED`
+- [x] Tested duplicate task prevention
+- [x] Tested creation of a cleaning task with the expected fields
+- [x] Verified the full Maven test suite: 13 tests passed, 0 failures, 0 errors
+
+#### Scheduler workflow
+
+```text
+Daily execution at midnight
+          ↓
+Find bookings checking out today
+          ↓
+Filter by CONFIRMED status
+          ↓
+Check whether a cleaning task already exists
+          ↓
+Create a cleaning task if necessary
+          ↓
+Save the task to PostgreSQL
+```

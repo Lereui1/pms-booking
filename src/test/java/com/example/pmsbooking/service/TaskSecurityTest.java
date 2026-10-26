@@ -42,6 +42,10 @@ class TaskSecurityTest {
     private User staffA;
     private Task taskB;
 
+    /**
+     * Готовит в базе тестовые отели, сотрудника и изолированную задачу.
+     * Искусственно авторизует сотрудника Отеля А для проверки правил разграничения доступа.
+     */
     @BeforeEach
     void setUp() {
         hotelA = hotelRepository.save(
@@ -92,11 +96,18 @@ class TaskSecurityTest {
         );
     }
 
+    /**
+     * Очищает контекст безопасности Spring Security после каждого теста, чтобы предотвратить
+     * утечку данных авторизации в другие тесты.
+     */
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Проверяет, что сотруднику запрещен доступ при попытке прочитать задачу, принадлежащую другому отелю.
+     */
     @Test
     void shouldDenyReadingTaskFromAnotherHotel() {
         assertThrows(
@@ -105,6 +116,9 @@ class TaskSecurityTest {
         );
     }
 
+    /**
+     * Проверяет, что сотруднику запрещено создавать задачу для другого отеля.
+     */
     @Test
     void shouldDenyCreatingTaskForAnotherHotel() {
         TaskRequest request = new TaskRequest();
@@ -117,6 +131,9 @@ class TaskSecurityTest {
         );
     }
 
+    /**
+     * Проверяет, что на задачу невозможно назначить сотрудника из другого отеля.
+     */
     @Test
     void shouldDenyAssigningStaffFromAnotherHotel() {
         User staffB = new User(
@@ -139,6 +156,9 @@ class TaskSecurityTest {
         );
     }
 
+    /**
+     * Проверяет, что сотруднику запрещено изменять статус задачи, принадлежащей другому отелю.
+     */
     @Test
     void shouldDenyChangingStatusOfTaskFromAnotherHotel() {
         assertThrows(
@@ -150,6 +170,9 @@ class TaskSecurityTest {
         );
     }
 
+    /**
+     * Проверяет, что сотруднику запрещено удалять задачу, принадлежащую другому отелю.
+     */
     @Test
     void shouldDenyDeletingTaskFromAnotherHotel() {
         assertThrows(
@@ -160,6 +183,9 @@ class TaskSecurityTest {
         assertTrue(taskRepository.existsById(taskB.getId()));
     }
 
+    /**
+     * Проверяет, что сотруднику успешно разрешен доступ на чтение задачи, принадлежащей его собственному отелю.
+     */
     @Test
     void shouldAllowReadingTaskFromOwnHotel() {
         Task ownTask = taskRepository.save(

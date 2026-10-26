@@ -107,6 +107,38 @@ public class TaskService {
     }
 
     @Transactional
+    public boolean createCheckoutCleaningTask(Booking booking) {
+        String title = "Уборка номера после выезда";
+
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            return false;
+        }
+
+        if (taskRepository.existsByBookingIdAndTitle(
+                booking.getId(),
+                title
+        )) {
+            return false;
+        }
+
+        Room room = booking.getRoom();
+        Hotel hotel = room.getHotel();
+
+        Task task = new Task(
+                hotel,
+                room,
+                booking,
+                null,
+                title,
+                "Провести уборку номера №" + room.getRoomNumber(),
+                booking.getCheckOut()
+        );
+
+        taskRepository.save(task);
+        return true;
+    }
+
+    @Transactional
     public TaskResponse updateTask(Long id, TaskRequest request) {
         User currentUser = getCurrentUser();
         Long currentHotelId = getCurrentHotelIdOrThrow(currentUser);

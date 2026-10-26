@@ -12,4 +12,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByHotelIdOrderByCreatedAtDesc(Long hotelId);
 
     List<Task> findByAssignedStaffIdOrderByCreatedAtDesc(Long assignedStaffId);
+
+    boolean existsByBookingIdAndTitle(Long bookingId, String title);
 }

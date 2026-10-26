@@ -34,10 +34,12 @@ class BookingConcurrencyTest {
     @Autowired
     private RoomRepository roomRepository;
 
+    /**
+     * Проверяет защиту от Race Condition: два параллельных потока пытаются одновременно
+     * забронировать один номер на одинаковые даты. Тест успешен, если сработает только одна бронь.
+     */
     @Test
     void shouldPreventConcurrentBookingsForSameRoomAndDates() {
-
-        // Создаём уникальные данные для теста
         String uniqueId = java.util.UUID.randomUUID().toString();
 
         User user = new User(
