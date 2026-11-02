@@ -372,3 +372,65 @@ Create a cleaning task if necessary
           ↓
 Save the task to PostgreSQL
 ```
+
+## RabbitMQ Fundamentals
+
+### RabbitMQ Concepts
+
+- [x] Studied Producer and Consumer
+- [x] Studied Message and Queue
+- [x] Studied Exchange and Routing Key
+- [x] Studied Binding
+- [x] Studied Direct Exchange
+- [x] Studied ACK, NACK and Reject
+- [x] Studied asynchronous message processing
+- [x] Studied Retry, TTL and Dead Letter Exchange
+- [x] Studied Dead Letter Queue
+- [x] Studied Idempotency
+- [x] Studied Publisher Confirms and Publisher Returns
+- [x] Studied Transactional Outbox Pattern
+
+### RabbitMQ Local Environment
+
+- [x] Installed and configured Docker Desktop
+- [x] Started RabbitMQ using Docker
+- [x] Enabled RabbitMQ Management UI
+- [x] Created a demo Direct Exchange
+- [x] Created a demo Queue and Binding
+- [x] Practiced publishing and consuming messages
+- [x] Tested ACK and Reject
+- [x] Configured retry using TTL and Dead Letter Exchange
+
+### Planned PMS Integration Architecture
+
+Booking Service
+↓
+BookingConfirmedEvent
+↓
+Transactional Outbox
+↓
+RabbitMQ Producer
+↓
+pms.booking.exchange
+↓
+Routing Key: booking.confirmed
+↓
+pms.booking.task.queue
+↓
+BookingConfirmedConsumer
+↓
+TaskService
+↓
+PostgreSQL
+
+### Planned Reliability Mechanisms
+
+- [ ] Implement RabbitMQ integration with Spring AMQP
+- [ ] Implement Producer using RabbitTemplate
+- [ ] Implement Consumer using @RabbitListener
+- [ ] Implement Transactional Outbox
+- [ ] Implement Idempotent message processing
+- [ ] Configure Publisher Confirms and Returns
+- [ ] Configure Retry mechanism
+- [ ] Configure Dead Letter Queue
+- [ ] Add automated integration tests
