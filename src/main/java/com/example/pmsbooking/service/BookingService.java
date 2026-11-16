@@ -6,11 +6,13 @@ import com.example.pmsbooking.entity.Booking;
 import com.example.pmsbooking.entity.BookingStatus;
 import com.example.pmsbooking.entity.Room;
 import com.example.pmsbooking.entity.User;
+import com.example.pmsbooking.event.BookingCreatedEvent;
 import com.example.pmsbooking.exception.BookingConflictException;
 import com.example.pmsbooking.exception.ResourceNotFoundException;
 import com.example.pmsbooking.repository.BookingRepository;
 import com.example.pmsbooking.repository.RoomRepository;
 import com.example.pmsbooking.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,15 +26,18 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public BookingService(
             BookingRepository bookingRepository,
             RoomRepository roomRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ApplicationEventPublisher eventPublisher) {
 
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -81,6 +86,18 @@ public class BookingService {
         );
 
         Booking savedBooking = bookingRepository.save(booking);
+
+        eventPublisher.publishEvent(
+                new BookingCreatedEvent(
+                        savedBooking.getId(),
+                        savedBooking.getUser().getId(),
+                        savedBooking.getRoom().getId(),
+                        savedBooking.getRoom().getHotel().getId(),
+                        savedBooking.getCheckIn(),
+                        savedBooking.getCheckOut(),
+                        savedBooking.getCreatedAt()
+                )
+        );
 
         return new BookingResponse(
                 savedBooking.getId(),

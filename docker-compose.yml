@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+    image: postgres:18
+    container_name: pms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pms_booking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: pms-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
