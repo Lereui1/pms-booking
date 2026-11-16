@@ -34,7 +34,7 @@ public class CheckoutScheduler {
                 );
 
         for (Booking booking : bookings) {
-            taskService.createCheckoutCleaningTask(booking);
+            taskService.createCheckoutCleaningTask(booking.getId());
         }
     }
 }

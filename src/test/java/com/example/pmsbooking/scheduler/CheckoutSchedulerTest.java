@@ -55,7 +55,7 @@ class CheckoutSchedulerTest {
                 BookingStatus.CONFIRMED
         );
 
-        verify(taskService).createCheckoutCleaningTask(booking);
+        verify(taskService).createCheckoutCleaningTask(booking.getId());
     }
 
     /**

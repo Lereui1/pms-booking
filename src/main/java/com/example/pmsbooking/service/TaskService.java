@@ -8,6 +8,8 @@ import com.example.pmsbooking.exception.ResourceNotFoundException;
 import com.example.pmsbooking.exception.ValidationException;
 import com.example.pmsbooking.repository.*;
 import com.example.pmsbooking.security.CustomUserDetails;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -23,19 +25,22 @@ public class TaskService {
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final AutomaticTaskCreator automaticTaskCreator;
 
     public TaskService(
             TaskRepository taskRepository,
             HotelRepository hotelRepository,
             RoomRepository roomRepository,
             BookingRepository bookingRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            AutomaticTaskCreator automaticTaskCreator
     ) {
         this.taskRepository = taskRepository;
         this.hotelRepository = hotelRepository;
         this.roomRepository = roomRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
+        this.automaticTaskCreator = automaticTaskCreator;
     }
 
     @Transactional(readOnly = true)
@@ -106,36 +111,28 @@ public class TaskService {
         return TaskResponse.from(savedTask);
     }
 
-    @Transactional
-    public boolean createCheckoutCleaningTask(Booking booking) {
-        String title = "Уборка номера после выезда";
+    public boolean createCheckoutCleaningTask(Long bookingId) {
+        try {
+            return automaticTaskCreator.createCheckoutCleaningTask(bookingId);
+        } catch (DataIntegrityViolationException exception) {
+            if (isDuplicateAutomaticTask(exception)) {
+                return false;
+            }
 
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            return false;
+            throw exception;
         }
+    }
 
-        if (taskRepository.existsByBookingIdAndTitle(
-                booking.getId(),
-                title
-        )) {
-            return false;
+    public boolean createBookingPreparationTask(Long bookingId) {
+        try {
+            return automaticTaskCreator.createBookingPreparationTask(bookingId);
+        } catch (DataIntegrityViolationException exception) {
+            if (isDuplicateAutomaticTask(exception)) {
+                return false;
+            }
+
+            throw exception;
         }
-
-        Room room = booking.getRoom();
-        Hotel hotel = room.getHotel();
-
-        Task task = new Task(
-                hotel,
-                room,
-                booking,
-                null,
-                title,
-                "Провести уборку номера №" + room.getRoomNumber(),
-                booking.getCheckOut()
-        );
-
-        taskRepository.save(task);
-        return true;
     }
 
     @Transactional
@@ -333,5 +330,20 @@ public class TaskService {
         }
 
         return user.getHotel().getId();
+    }
+
+    private boolean isDuplicateAutomaticTask(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException violation) {
+                return "uk_tasks_booking_id_title"
+                        .equals(violation.getConstraintName());
+            }
+
+            cause = cause.getCause();
+        }
+
+        return false;
     }
 }

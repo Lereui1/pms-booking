@@ -401,36 +401,54 @@ Save the task to PostgreSQL
 - [x] Tested ACK and Reject
 - [x] Configured retry using TTL and Dead Letter Exchange
 
-### Planned PMS Integration Architecture
+### Implemented PMS Integration Architecture
 
+```text
 Booking Service
-↓
-BookingConfirmedEvent
-↓
-Transactional Outbox
-↓
-RabbitMQ Producer
-↓
-pms.booking.exchange
-↓
-Routing Key: booking.confirmed
-↓
-pms.booking.task.queue
-↓
-BookingConfirmedConsumer
-↓
-TaskService
-↓
-PostgreSQL
+      ↓
+BookingCreatedEvent
+      ↓
+Spring ApplicationEventPublisher
+      ↓
+BookingEventPublisher
+(@TransactionalEventListener - AFTER_COMMIT)
+      ↓
+RabbitTemplate
+      ↓
+booking.exchange (Direct Exchange)
+      │
+      ├── booking.created.task
+      │         ↓
+      │   booking.task.queue
+      │         ↓
+      │   BookingTaskConsumer
+      │         ↓
+      │   TaskService
+      │         ↓
+      │   AutomaticTaskCreator
+      │         ↓
+      │   PostgreSQL
+      │
+      └── booking.created.notification
+                ↓
+          booking.notification.queue
+                ↓
+          BookingNotificationConsumer
+                ↓
+          Logging booking notification
+```
+
+### Implemented Reliability Mechanisms
+
+- [x] Implemented RabbitMQ integration with Spring AMQP
+- [x] Implemented Producer using RabbitTemplate
+- [x] Implemented Consumers using @RabbitListener
+- [x] Implemented idempotent automatic task creation
+- [x] Configured Retry mechanism (3 attempts, 2-second interval)
+- [x] Configured Dead Letter Exchange (DLX) and Dead Letter Queues (DLQ)
 
 ### Planned Reliability Mechanisms
 
-- [ ] Implement RabbitMQ integration with Spring AMQP
-- [ ] Implement Producer using RabbitTemplate
-- [ ] Implement Consumer using @RabbitListener
 - [ ] Implement Transactional Outbox
-- [ ] Implement Idempotent message processing
-- [ ] Configure Publisher Confirms and Returns
-- [ ] Configure Retry mechanism
-- [ ] Configure Dead Letter Queue
-- [ ] Add automated integration tests
+- [ ] Configured Publisher Confirms and Returns
+- [ ] Added automated RabbitMQ integration tests

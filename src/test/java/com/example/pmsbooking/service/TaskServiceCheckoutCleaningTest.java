@@ -1,11 +1,12 @@
 package com.example.pmsbooking.service;
 
-import com.example.pmsbooking.entity.*;
 import com.example.pmsbooking.repository.*;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 
-import java.time.LocalDate;
+import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -17,7 +18,7 @@ class TaskServiceCheckoutCleaningTest {
     private RoomRepository roomRepository;
     private BookingRepository bookingRepository;
     private UserRepository userRepository;
-
+    private AutomaticTaskCreator automaticTaskCreator;
     private TaskService taskService;
 
     /**
@@ -31,106 +32,120 @@ class TaskServiceCheckoutCleaningTest {
         roomRepository = mock(RoomRepository.class);
         bookingRepository = mock(BookingRepository.class);
         userRepository = mock(UserRepository.class);
+        automaticTaskCreator = mock(AutomaticTaskCreator.class);
 
         taskService = new TaskService(
                 taskRepository,
                 hotelRepository,
                 roomRepository,
                 bookingRepository,
-                userRepository
+                userRepository,
+                automaticTaskCreator
         );
     }
 
     /**
-     * Проверяет, что задача на уборку не создается, если статус бронирования не CONFIRMED.
-     * Гарантирует, что метод возвращает false и не обращается к репозиторию задач.
+     * Проверяет, что TaskService возвращает false,
+     * если AutomaticTaskCreator не создал автоматическую задачу.
      */
     @Test
-    void shouldNotCreateTaskWhenBookingIsNotConfirmed() {
-        Booking booking = mock(Booking.class);
+    void shouldReturnFalseWhenAutomaticTaskCreatorReturnsFalse() {
+        when(automaticTaskCreator.createCheckoutCleaningTask(1L))
+                .thenReturn(false);
 
-        when(booking.getStatus()).thenReturn(BookingStatus.CANCELLED);
-
-        boolean result = taskService.createCheckoutCleaningTask(booking);
+        boolean result = taskService.createCheckoutCleaningTask(1L);
 
         assertFalse(result);
 
-        verify(taskRepository, never()).save(any(Task.class));
-
-        verify(taskRepository, never())
-                .existsByBookingIdAndTitle(any(), anyString());
+        verify(automaticTaskCreator).createCheckoutCleaningTask(1L);
+        verifyNoInteractions(taskRepository);
     }
 
     /**
-     * Проверяет защиту от дубликатов: задача на уборку не должна создаваться повторно для одного бронирования.
-     * Гарантирует, что метод возвращает false и отменяет сохранение, если такая задача уже есть в базе.
-     */
-    @Test
-    void shouldNotCreateDuplicateCleaningTask() {
-        Booking booking = mock(Booking.class);
-
-        when(booking.getStatus()).thenReturn(BookingStatus.CONFIRMED);
-        when(booking.getId()).thenReturn(1L);
-
-        when(taskRepository.existsByBookingIdAndTitle(
-                1L,
-                "Уборка номера после выезда"
-        )).thenReturn(true);
-
-        boolean result = taskService.createCheckoutCleaningTask(booking);
-
-        assertFalse(result);
-
-        verify(taskRepository).existsByBookingIdAndTitle(
-                1L,
-                "Уборка номера после выезда"
-        );
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    /**
-     * Проверяет успешное создание задачи на уборку, когда бронирование CONFIRMED
-     * и такая задача еще не существует в базе.
+     * Проверяет, что TaskService возвращает true,
+     * если AutomaticTaskCreator успешно создал задачу на уборку.
      */
     @Test
     void shouldCreateCleaningTaskWhenBookingIsConfirmedAndTaskDoesNotExist() {
-        Booking booking = mock(Booking.class);
-        Room room = mock(Room.class);
-        Hotel hotel = mock(Hotel.class);
+        when(automaticTaskCreator.createCheckoutCleaningTask(1L))
+                .thenReturn(true);
 
-        LocalDate checkOut = LocalDate.of(2026, 10, 25);
-
-        when(booking.getStatus()).thenReturn(BookingStatus.CONFIRMED);
-        when(booking.getId()).thenReturn(1L);
-        when(booking.getRoom()).thenReturn(room);
-        when(booking.getCheckOut()).thenReturn(checkOut);
-
-        when(room.getHotel()).thenReturn(hotel);
-        when(room.getRoomNumber()).thenReturn("101");
-
-        when(taskRepository.existsByBookingIdAndTitle(
-                1L,
-                "Уборка номера после выезда"
-        )).thenReturn(false);
-
-        boolean result = taskService.createCheckoutCleaningTask(booking);
+        boolean result = taskService.createCheckoutCleaningTask(1L);
 
         assertTrue(result);
 
-        verify(taskRepository).save(argThat(task ->
-                           task.getHotel() == hotel
-                        && task.getRoom() == room
-                        && task.getBooking() == booking
-                        && task.getAssignedStaff() == null
-                        && task.getTitle().equals(
-                        "Уборка номера после выезда"
-                )
-                        && task.getDescription().equals(
-                        "Провести уборку номера №101"
-                )
-                        && task.getDueDate().equals(checkOut)
-                        && task.getStatus() == TaskStatus.BACKLOG
-        ));
+        verify(automaticTaskCreator).createCheckoutCleaningTask(1L);
+        verifyNoInteractions(taskRepository);
+    }
+
+    /**
+     * Проверяет, что при нарушении уникального ограничения
+     * uk_tasks_booking_id_title метод возвращает false,
+     * поскольку автоматическая задача уже существует.
+     */
+    @Test
+    void shouldReturnFalseWhenDuplicateAutomaticTaskConstraintIsViolated() {
+        SQLException sqlException = new SQLException("Duplicate key", "23505");
+
+        ConstraintViolationException constraintException =
+                new ConstraintViolationException(
+                        "Duplicate automatic task",
+                        sqlException,
+                        "insert into tasks",
+                        "uk_tasks_booking_id_title"
+                );
+
+        DataIntegrityViolationException exception =
+                new DataIntegrityViolationException(
+                        "Could not save automatic task",
+                        constraintException
+                );
+
+        when(automaticTaskCreator.createCheckoutCleaningTask(1L))
+                .thenThrow(exception);
+
+        boolean result = taskService.createCheckoutCleaningTask(1L);
+
+        assertFalse(result);
+
+        verify(automaticTaskCreator).createCheckoutCleaningTask(1L);
+        verifyNoInteractions(taskRepository);
+    }
+
+    /**
+     * Проверяет, что DataIntegrityViolationException
+     * пробрасывается дальше, если нарушено ограничение,
+     * отличное от uk_tasks_booking_id_title.
+     */
+    @Test
+    void shouldRethrowDataIntegrityViolationWhenConstraintIsDifferent() {
+        SQLException sqlException = new SQLException("Duplicate key", "23505");
+
+        ConstraintViolationException constraintException =
+                new ConstraintViolationException(
+                        "Another constraint violation",
+                        sqlException,
+                        "insert into tasks",
+                        "uk_some_other_constraint"
+                );
+
+        DataIntegrityViolationException exception =
+                new DataIntegrityViolationException(
+                        "Could not save task",
+                        constraintException
+                );
+
+        when(automaticTaskCreator.createCheckoutCleaningTask(1L))
+                .thenThrow(exception);
+
+        DataIntegrityViolationException thrownException =
+                assertThrows(
+                        DataIntegrityViolationException.class,
+                        () -> taskService.createCheckoutCleaningTask(1L)
+                );
+
+        assertSame(exception, thrownException);
+
+        verify(automaticTaskCreator).createCheckoutCleaningTask(1L);
     }
 }
