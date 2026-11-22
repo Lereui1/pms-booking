@@ -446,9 +446,10 @@ booking.exchange (Direct Exchange)
 - [x] Implemented idempotent automatic task creation
 - [x] Configured Retry mechanism (3 attempts, 2-second interval)
 - [x] Configured Dead Letter Exchange (DLX) and Dead Letter Queues (DLQ)
+- [x] Configured Publisher Confirms and Returns
 
 ### Planned Reliability Mechanisms
 
 - [ ] Implement Transactional Outbox
-- [ ] Configured Publisher Confirms and Returns
-- [ ] Added automated RabbitMQ integration tests
+- [ ] Implement automated RabbitMQ integration tests
+- [ ] Implement Manual Message Replay for Dead Letter Queues (DLQ)
