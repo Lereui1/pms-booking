@@ -1,9 +1,12 @@
 package com.example.pmsbooking.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.autoconfigure.amqp.RabbitTemplateCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -11,6 +14,9 @@ import org.springframework.context.annotation.Profile;
 @Profile("!test")
 @Configuration
 public class RabbitMQConfig {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(RabbitMQConfig.class);
 
     @Bean
     public DirectExchange bookingExchange() {
@@ -83,5 +89,42 @@ public class RabbitMQConfig {
                 .bind(bookingNotificationDeadLetterQueue())
                 .to(bookingDeadLetterExchange())
                 .with("booking.notification.dlq");
+    }
+
+    @Bean
+    public RabbitTemplateCustomizer rabbitTemplateCustomizer() {
+        return rabbitTemplate -> {
+
+            rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+
+                String correlationId = correlationData != null
+                        ? correlationData.getId()
+                        : "unknown";
+
+                if (ack) {
+                    log.info(
+                            "RabbitMQ publisher ACK: correlationId={}",
+                            correlationId
+                    );
+                } else {
+                    log.error(
+                            "RabbitMQ publisher NACK: correlationId={}, cause={}",
+                            correlationId,
+                            cause
+                    );
+                }
+            });
+
+            rabbitTemplate.setReturnsCallback(returned -> {
+
+                log.error(
+                        "RabbitMQ returned message: exchange={}, routingKey={}, replyCode={}, replyText={}",
+                        returned.getExchange(),
+                        returned.getRoutingKey(),
+                        returned.getReplyCode(),
+                        returned.getReplyText()
+                );
+            });
+        };
     }
 }

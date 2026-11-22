@@ -1,6 +1,7 @@
 package com.example.pmsbooking.messaging;
 
 import com.example.pmsbooking.event.BookingCreatedEvent;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -20,16 +21,24 @@ public class BookingEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleBookingCreated(BookingCreatedEvent event) {
 
+        CorrelationData taskCorrelation =
+                new CorrelationData("booking-task-" + event.bookingId());
+
         rabbitTemplate.convertAndSend(
                 "booking.exchange",
                 "booking.created.task",
-                event
+                event,
+                taskCorrelation
         );
+
+        CorrelationData notificationCorrelation =
+                new CorrelationData("booking-notification-" + event.bookingId());
 
         rabbitTemplate.convertAndSend(
                 "booking.exchange",
                 "booking.created.notification",
-                event
+                event,
+                notificationCorrelation
         );
     }
 }
